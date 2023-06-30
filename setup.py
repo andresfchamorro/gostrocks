@@ -11,18 +11,16 @@ setup(
         'geopandas',
         'pandas',
         'numpy',
-        'osmnx',
-        'GOSTNets',
         'scikit-image',
         'pyproj',
         'ogr',
         'rtree',
-        'osmnx',
-        'networkx',
-        'xarray',
-        'rioxarray',
-        'seaborn'
     ],
+    extras_require = {
+        'osm':  ["GOSTNets", "osmnx", "networkx"],
+        'xrio': ["xarray", "rioxarray"],
+        'graphs' : ["seaborn"]
+    },
     version='0.0.2',
     description='Miscellaneous geospatial functions concerning vector, raster, and network analysis',
     long_description=long_description,

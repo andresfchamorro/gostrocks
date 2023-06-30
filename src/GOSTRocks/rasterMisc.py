@@ -11,8 +11,6 @@ import pandas as pd
 import geopandas as gpd
 import numpy as np
 import matplotlib.pyplot as plt
-import xarray as xr
-import rioxarray as rxr
 
 from matplotlib.colors import ListedColormap, BoundaryNorm
 from collections import Counter
@@ -26,9 +24,8 @@ from rasterio.warp import reproject, Resampling
 from rasterio import MemoryFile
 from contextlib import contextmanager
 
-import seaborn as sns
 import shapely
-sns.set(font_scale=1.5, style="whitegrid")
+import numpy as np
 
 curPath = os.path.realpath(os.path.abspath(os.path.split(inspect.getfile( inspect.currentframe() ))[0]))
 if not curPath in sys.path:
@@ -51,7 +48,7 @@ def create_rasterio_inmemory(src, curData):
         with memFile.open() as dataset:
             yield(dataset)
             
-def clipRaster(inR, inD, outFile, crop=True):
+def clipRaster(inR, inD, outFile, crop=True, buff=False):
     ''' Clip input raster
     INPUT
     [rasterio object] inR = rasterio.open(r"Q:/GLOBAL/POP&DEMO/GHS/BETA/FULL/MT/MT.vrt")
@@ -67,6 +64,8 @@ def clipRaster(inR, inD, outFile, crop=True):
     def getFeatures(gdf):
         #Function to parse features from GeoDataFrame in such a manner that rasterio wants them
         return [json.loads(gdf.to_json())['features'][0]['geometry']]
+    if buff:
+        inD = inD.buffer(buff)
     if crop:
         tD = gpd.GeoDataFrame([[1]], geometry=[inD.unary_union])
     else:
@@ -78,10 +77,14 @@ def clipRaster(inR, inD, outFile, crop=True):
                      "height": out_img.shape[1],
                      "width": out_img.shape[2],
                      "transform": out_transform})
-    with rasterio.open(outFile, "w", **out_meta) as dest:
-        dest.write(out_img)
+    if outFile:        
+        with rasterio.open(outFile, "w", **out_meta) as dest:
+            dest.write(out_img)
+    else:
+        return (out_img, out_meta)
 
-def rasterizeDataFrame(inD, outFile, idField='', templateRaster='', templateMeta = '', nCells=0, res=0, mergeAlg="REPLACE", re_proj=False):
+def rasterizeDataFrame(inD, outFile, idField='', templateRaster='', templateMeta = '', 
+                       nCells=0, res=0, mergeAlg="REPLACE", re_proj=False, nodata=np.nan):
     ''' Convert input geopandas dataframe into a raster file
         inD = gpd.read_file(r"C:\Temp\TFRecord\Data\Training Data\test3_training.shp")
         templateRaster=r"C:\Temp\TFRecord\Data\Training Data\test3.tif"
@@ -158,16 +161,14 @@ def rasterizeDataFrame(inD, outFile, idField='', templateRaster='', templateMeta
             crs = inD.crs
         print(crs)
         cMeta = {'count':1, 'crs': crs, 'dtype':inD['VALUE'].dtype, 'driver':'GTiff',
-                 'transform':nTransform, 'height':height, 'width':width}
+                 'transform':nTransform, 'height':height, 'width':width, 'nodata':nodata}
     shapes = ((row.geometry,row.VALUE) for idx, row in inD.iterrows())
     burned = features.rasterize(shapes=shapes, out_shape=(cMeta['height'], cMeta['width']), transform=nTransform, dtype=cMeta['dtype'], merge_alg=mAlg)
-    try:
+    if outFile:
         with rasterio.open(outFile, 'w', **cMeta) as out:
             out.write_band(1, burned)
-        return({'meta':cMeta, 'vals': burned})
-    except:
-        print("Error writing raster")
-        return({'meta':cMeta, 'vals': burned})
+    else:
+        return(burned, cMeta)
 
 def polygonizeArray(data, b, curRaster):
     '''
