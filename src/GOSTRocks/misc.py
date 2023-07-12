@@ -16,6 +16,10 @@ from shapely.geometry import shape, Point, Polygon
 from affine import Affine
 from rasterio.features import rasterize
 
+from pyproj import CRS
+from pyproj.aoi import AreaOfInterest
+from pyproj.database import query_utm_crs_info
+
 wgs84 = {'init':'epsg:4326'}
 
 def loggingInfo():
@@ -311,4 +315,30 @@ def project_UTM(inD):
         letter = '7'
     outUTM = '32%s%s' % (letter, ll_utm[2])
     return(inD.to_crs({'init': 'epsg:%s' % outUTM}))
+
+def get_utm(gdf):
     
+    center = gdf.unary_union.centroid
+    utm_crs_list = query_utm_crs_info(
+    datum_name="WGS 84",
+    area_of_interest=AreaOfInterest(
+        west_lon_degree=center.x,
+        south_lat_degree=center.y,
+        east_lon_degree=center.x,
+        north_lat_degree=center.y
+        ),
+    )
+    utm_crs = CRS.from_epsg(utm_crs_list[0].code)
+    return(utm_crs)
+
+# bb = gdf.total_bounds
+# utm_crs_list = query_utm_crs_info(
+#     datum_name="WGS 84",
+#     area_of_interest=AreaOfInterest(
+#         west_lon_degree=-bb[0],
+#         south_lat_degree=bb[1],
+#         east_lon_degree=bb[2],
+#         north_lat_degree=bb[2]
+#     ),
+# )
+# [utm for utm in utm_crs_list if ((bb[0] > utm.area_of_use.west) & (bb[2] < utm.area_of_use.east))]

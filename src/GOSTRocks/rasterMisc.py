@@ -163,7 +163,8 @@ def rasterizeDataFrame(inD, outFile, idField='', templateRaster='', templateMeta
         cMeta = {'count':1, 'crs': crs, 'dtype':inD['VALUE'].dtype, 'driver':'GTiff',
                  'transform':nTransform, 'height':height, 'width':width, 'nodata':nodata}
     shapes = ((row.geometry,row.VALUE) for idx, row in inD.iterrows())
-    burned = features.rasterize(shapes=shapes, out_shape=(cMeta['height'], cMeta['width']), transform=nTransform, dtype=cMeta['dtype'], merge_alg=mAlg)
+    burned = features.rasterize(shapes=shapes, out_shape=(cMeta['height'], cMeta['width']), 
+                                transform=nTransform, dtype=cMeta['dtype'], merge_alg=mAlg, fill=nodata)
     if outFile:
         with rasterio.open(outFile, 'w', **cMeta) as out:
             out.write_band(1, burned)
