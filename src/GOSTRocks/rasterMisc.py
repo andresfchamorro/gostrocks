@@ -156,10 +156,9 @@ def rasterizeDataFrame(inD, outFile, idField='', templateRaster='', templateMeta
         b = inD.total_bounds
         nTransform = rasterio.transform.from_bounds(b[0], b[1], b[2], b[3], width, height)
         if inD.crs.__class__ == pyproj.crs.crs.CRS:
-            crs = {'init':'epsg:%s' % inD.crs.to_epsg()}
+            crs = inD.crs.to_string()
         else:
             crs = inD.crs
-        print(crs)
         cMeta = {'count':1, 'crs': crs, 'dtype':inD['VALUE'].dtype, 'driver':'GTiff',
                  'transform':nTransform, 'height':height, 'width':width, 'nodata':nodata}
     shapes = ((row.geometry,row.VALUE) for idx, row in inD.iterrows())

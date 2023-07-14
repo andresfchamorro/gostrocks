@@ -12,7 +12,7 @@ import ogr
 from collections import Counter
 from math import ceil
 from rtree import index
-from shapely.geometry import shape, Point, Polygon
+from shapely.geometry import shape, Point, Polygon, box
 from affine import Affine
 from rasterio.features import rasterize
 
@@ -316,9 +316,12 @@ def project_UTM(inD):
     outUTM = '32%s%s' % (letter, ll_utm[2])
     return(inD.to_crs({'init': 'epsg:%s' % outUTM}))
 
-def get_utm(gdf):
+def get_utm(gdf, bbox=True):
     
-    center = gdf.unary_union.centroid
+    if bbox:
+        center = box(*gdf.total_bounds).centroid
+    else:
+        center = gdf.unary_union.centroid
     utm_crs_list = query_utm_crs_info(
     datum_name="WGS 84",
     area_of_interest=AreaOfInterest(
