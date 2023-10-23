@@ -72,7 +72,7 @@ def clipRaster(inR, inD, outFile, crop=True, buff=False):
         tD = gpd.GeoDataFrame([[1]], geometry=[box(*inD.total_bounds)])
     
     coords = getFeatures(tD)
-    out_img, out_transform = mask(inR, shapes=coords, crop=True)
+    out_img, out_transform = mask(inR, shapes=coords, crop=True, all_touched=True)
     out_meta.update({"driver": "GTiff",
                      "height": out_img.shape[1],
                      "width": out_img.shape[2],
@@ -164,6 +164,7 @@ def rasterizeDataFrame(inD, outFile, idField='', templateRaster='', templateMeta
     shapes = ((row.geometry,row.VALUE) for idx, row in inD.iterrows())
     burned = features.rasterize(shapes=shapes, out_shape=(cMeta['height'], cMeta['width']), 
                                 transform=nTransform, dtype=cMeta['dtype'], merge_alg=mAlg, fill=nodata)
+    inD.drop(columns=['VALUE'], inplace=True)
     if outFile:
         with rasterio.open(outFile, 'w', **cMeta) as out:
             out.write_band(1, burned)

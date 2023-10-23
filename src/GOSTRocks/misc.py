@@ -7,7 +7,7 @@ import fiona
 import pyproj
 import rasterio
 import numpy
-import ogr
+# import ogr
 
 from collections import Counter
 from math import ceil
